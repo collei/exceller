@@ -1,5 +1,5 @@
 vendor
 test
 materials
-.sublime-project
-.sublime-workspace
+*.sublime-project
+*.sublime-workspace
