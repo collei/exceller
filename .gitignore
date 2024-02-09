@@ -1,5 +1,6 @@
-vendor
-test
-materials
+/vendor/
+/test/
+/materials/
+test.php
 *.sublime-project
 *.sublime-workspace
