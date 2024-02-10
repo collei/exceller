@@ -2,7 +2,9 @@
 namespace Collei\Exceller\Input;
 
 use PhpOffice\PhpSpreadsheet\IOFactory as PhpSpreadsheetIOFactory;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Collei\Exceller\Support\Str;
+use Closure;
 
 /**
  * Basic input engine for spreadsheet row readers;
@@ -12,21 +14,77 @@ use Collei\Exceller\Support\Str;
 abstract class Reader
 {
 	/**
-	 * Open a worksheet from the given $fileName
+	 * @var string
+	 */
+	protected $fileName;
+
+	/**
+	 * @var string
+	 */
+	protected $currentSheet = null;
+
+	/**
+	 * @var \PhpOffice\PhpSpreadsheet\Spreadsheet
+	 */
+	protected $spreadsheet;
+
+	/**
+	 * Initialize an instance for $fileName
 	 *
 	 * @param string $fileName
+	 * @param string|int $whichSheet = null
+	 * @return void
+	 */
+	public function __construct(string $fileName, $whichSheet = null)
+	{
+		$this->fileName = $fileName;
+		$this->currentSheet = $whichSheet;
+
+		// Identify the type of $fileName
+		$fileType = PhpSpreadsheetIOFactory::identify($this->fileName);
+		// Create a new Reader of the type that has been identified
+		$reader = PhpSpreadsheetIOFactory::createReader($fileType);
+		// Load $fileName to a Spreadsheet Object
+		$this->spreadsheet = $reader->load($fileName);
+	}
+
+	/**
+	 * Select which sheet should be read from file.
+	 *
+	 * @param string|int $whichSheet
+	 * @return void
+	 */
+	public function selectSheet($whichSheet)
+	{
+		if (! empty($whichSheet)) {
+			$this->currentSheet = $whichSheet;
+		}
+	}
+
+	/**
+	 * Open a worksheet from the spreadsheet
+	 *
 	 * @return \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet
 	 */
-	protected static function openSheet(string $fileName)
+	protected function openSheet($which = null)
 	{
-		/**  Identify the type of $fileName  **/
-		$fileType = PhpSpreadsheetIOFactory::identify($fileName);
-		/**  Create a new Reader of the type that has been identified  **/
-		$reader = PhpSpreadsheetIOFactory::createReader($fileType);
-		/**  Load $fileName to a Spreadsheet Object  **/
-		$spreadsheet = $reader->load($fileName);
-		/**  Get the active sheet (usually the first) **/
-		return $spreadsheet->getActiveSheet();
+		// If no sheet is given, assume the selected one
+		$which = $which ?: $this->currentSheet;
+
+		if (! empty($which)) {
+			// Get the sheet named $which
+			if (is_string($which)) {
+				return $this->spreadsheet->getSheetByName($which);
+			}
+
+			// Get the sheet with index $which
+			if (is_int($which)) {
+				return $this->spreadsheet->getSheet($which);
+			}
+		}
+
+		// Get the active sheet (usually the first)
+		return $this->spreadsheet->getActiveSheet();
 	}
 
 	/**
@@ -44,7 +102,7 @@ abstract class Reader
 		int $start = 1
 	) {
 		if ($start < 1) {
-			throw new RuntimeException('Primeira linha não pode ser menor que 1');
+			throw new RuntimeException('First line must not be lesser than 1');
 		}
 
 		// Data limits
@@ -130,7 +188,7 @@ abstract class Reader
 		// remover acentos de letras, troca espaços para underscore
 		$identifier = Str::ascii($identifier);
 		// tudo em minúsculas
-		$identifier = strtolower($identifier);
+		$identifier = strtolower(trim($identifier));
 		// trocar espaços para underscores
 		$identifier = str_replace([' ',"\t","\xA0"], '_', $identifier);
 		// somente letras, dígitos e underscores

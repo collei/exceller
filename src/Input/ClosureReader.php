@@ -13,22 +13,21 @@ class ClosureReader extends Reader
 	/**
 	 * Import rows from spreadsheet by using a custom Closure
 	 *
-	 * @param string $fileName
+	 * @param \Closure $callback
 	 * @param int $startLine = 1
 	 * @param bool $hasDataHeader = true
 	 * @return int
 	 */
-	public static function readExcelRows(
-		string $fileName,
+	public function readRowsWith(
 		Closure $callback,
 		int $startLine = 1,
 		bool $hasDataHeader = true
 	) {
-		$sheet = self::openSheet($fileName);
+		$sheet = $this->openSheet();
 
 		$firstLine = $hasDataHeader;
 
-		$lineCount = self::processSheet($sheet, function($row) use ($callback, &$firstLine) {
+		$lineCount = static::processSheet($sheet, function($row) use ($callback, &$firstLine) {
 			if ($firstLine) {
 				$firstLine = false;
 			} else {
