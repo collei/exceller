@@ -52,13 +52,15 @@ abstract class Reader
 	 * Select which sheet should be read from file.
 	 *
 	 * @param string|int $whichSheet
-	 * @return void
+	 * @return $this
 	 */
 	public function selectSheet($whichSheet)
 	{
 		if (! empty($whichSheet)) {
 			$this->currentSheet = $whichSheet;
 		}
+
+		return $this;
 	}
 
 	/**
@@ -92,23 +94,25 @@ abstract class Reader
 	 *
 	 * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
 	 * @param \Closure $callback
-	 * @param int $start = 1
+	 * @param int $startRow = 1
 	 * @return array
-	 * @throws \RuntimeException if $start is lesser then 1
+	 * @throws \RuntimeException if $startRow is lesser then 1
 	 */
 	protected static function processSheet(
 		Worksheet $sheet,
 		Closure $callback,
-		int $start = 1
+		int $startRow = 1,
+		int $endRow = null,
+		string $endColumn = null
 	) {
-		if ($start < 1) {
+		if ($startRow < 1) {
 			throw new RuntimeException('First line must not be lesser than 1');
 		}
 
 		// Data limits
-		$maxRow = $sheet->getHighestRow();
-		$maxColumn = $sheet->getHighestColumn();
-		$lines = range($start, $maxRow);
+		$endRow = $endRow ?: $sheet->getHighestRow();
+		$endColumn = $endColumn ?: $sheet->getHighestColumn();
+		$lines = range($startRow, $endRow);
 
 		// data extraction
 		$emptyLinesCount = 0;
@@ -119,7 +123,7 @@ abstract class Reader
 
 		foreach ($lines as $lineNumber) {
 			// define row range (the columns whose data must get captured)
-			$rangeStr = str_replace(['_','?'], [$lineNumber, $maxColumn], 'A_:?_');
+			$rangeStr = str_replace(['_','?'], [$lineNumber, $endColumn], 'A_:?_');
 			// extract row data
 			$row = ($sublin = $sheet->rangeToArray($rangeStr))[0];
 			// filter empty cells
