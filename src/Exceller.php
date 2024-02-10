@@ -9,5 +9,10 @@ class Exceller
 	{
 		$this->filename = $filename;
 	}
-	
+
+	public function doug(...$things)
+	{
+		echo sprintf('<fieldset><legend>There are %s things to show:</legend> <pre>%s</pre> </fieldset>', count($things), print_r(compact('things'), true));
+	}
+
 }
