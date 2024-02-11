@@ -204,7 +204,7 @@ abstract class Reader
 			$identifier = '_' . $identifier;
 		}
 		//
-		return $identifier;
+		return trim($identifier, '_');
 	}
 
 	/**
