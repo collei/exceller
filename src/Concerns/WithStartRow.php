@@ -11,5 +11,5 @@ interface WithStartRow
 	 *
 	 * @return int
 	 */
-	public function startRow();
+	public function start();
 }
