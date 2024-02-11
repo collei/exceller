@@ -23,18 +23,41 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ImporterReader extends Reader
 {
 	/**
+	 * @var bool
+	 */
+	protected $throwOnError = true;
+
+	/**
+	 * Initialize an instance for $fileName
+	 *
+	 * @param string $fileName
+	 * @param string|int $whichSheet = null
+	 * @return void
+	 */
+	public function __construct(string $fileName, object $importer, bool $throwOnError = true)
+	{
+		parent::__construct($fileName, null);
+
+		$this->throwOnError = $throwOnError;
+
+		$this->startImporting($importer);
+	}
+
+	/**
 	 * Import rows from spreadsheet by using a custom importer object instance.
 	 *
 	 * @param object $importer
 	 * @return void
 	 */
-	public function readWith(object $importer, bool $throwOnError = true)
+	protected function startImporting(object $importer)
 	{
 		if ($importer instanceof WithMultipleSheets) {
-			return $this->importMultiple($importer, $throwOnError);
+			$this->importMultiple($importer, $this->throwOnError);
+
+			return;
 		}
 
-		return $this->importSingle(null, $importer, $throwOnError);
+		$this->importSingle(null, $importer, $this->throwOnError);
 	}
 
 	/**
@@ -85,7 +108,7 @@ class ImporterReader extends Reader
 			}
 			//
 			throw new SheetNotFoundException(
-				sprintf('Sheet %s not found in the file', $name);
+				sprintf('Sheet %s not found in the file', $name)
 			);
 		}
 
@@ -139,17 +162,22 @@ class ImporterReader extends Reader
 
 		// pick the sheet reference
 		$sheet = empty($sheetName) ? $this->openSheet() : $this->openSheet($sheetName);
-		// initialize line control
-		$firstLine = $hasDataHeader;
+
 
 		if ($importer instanceof OnEachRow) {
-			return $this->doImportOnEachRow($sheet, $importer, $startRow, $endRow, $endColumn, $throwOnError);
+			return $this->doImportOnEachRow(
+				$sheet, $importer, $startRow, $endRow, $endColumn, $hasDataHeader, $throwOnError
+			);
 		}
 		elseif ($importer instanceof ToEachRow) {
-			return $this->doImportToEachRow($sheet, $importer, $startRow, $endRow, $endColumn, $throwOnError);
+			return $this->doImportToEachRow(
+				$sheet, $importer, $startRow, $endRow, $endColumn, $hasDataHeader, $throwOnError
+			);
 		}
 		elseif ($importer instanceof ToArray) {
-			return $this->doImportToArray($sheet, $importer, $startRow, $endRow, $endColumn, $throwOnError);
+			return $this->doImportToArray(
+				$sheet, $importer, $startRow, $endRow, $endColumn, $hasDataHeader, $throwOnError
+			);
 		}
 
 		return false;
@@ -163,6 +191,7 @@ class ImporterReader extends Reader
 	 * @param int $startRow
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
+	 * @param bool $hasDataHeader = true
 	 * @param bool $throwOnError = true
 	 * @throws \Collei\Exceller\Exceptions\ExcellerException
 	 */
@@ -172,8 +201,11 @@ class ImporterReader extends Reader
 		int $startRow,
 		int $endRow = null,
 		string $endColumn = null,
+		bool $hasDataHeader = true,
 		bool $throwOnError = true
 	) {
+		// initialize line control
+		$firstLine = $hasDataHeader;
 		// importer lambda function
 		$rowImporterFunction = function($row) use ($importer, &$firstLine) {
 			if ($firstLine) {
@@ -213,6 +245,7 @@ class ImporterReader extends Reader
 	 * @param int $startRow
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
+	 * @param bool $hasDataHeader = true
 	 * @param bool $throwOnError = true
 	 * @throws \Collei\Exceller\Exceptions\ExcellerException
 	 */
@@ -222,8 +255,11 @@ class ImporterReader extends Reader
 		int $startRow,
 		int $endRow = null,
 		string $endColumn = null,
+		bool $hasDataHeader = true,
 		bool $throwOnError = true
 	) {
+		// initialize line control
+		$firstLine = $hasDataHeader;
 		// importer lambda function
 		$rowImporterFunction = function($row) use ($importer, &$firstLine) {
 			if ($firstLine) {
@@ -263,6 +299,7 @@ class ImporterReader extends Reader
 	 * @param int $startRow
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
+	 * @param bool $hasDataHeader = true
 	 * @param bool $throwOnError = true
 	 * @throws \Collei\Exceller\Exceptions\ExcellerException
 	 */
@@ -272,11 +309,13 @@ class ImporterReader extends Reader
 		int $startRow,
 		int $endRow = null,
 		string $endColumn = null,
+		bool $hasDataHeader = true,
 		bool $throwOnError = true
 	) {
 		// data lines here
 		$array = [];
-
+		// initialize line control
+		$firstLine = $hasDataHeader;
 		// importer lambda function
 		$rowImporterFunction = function($row) use (&$array, &$firstLine) {
 			if ($firstLine) {
