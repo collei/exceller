@@ -3,7 +3,7 @@
 	"description": "A simple wrapper for the PHPOffice/PHPSpreadsheet package. Read excel files with ease.",
 	"keywords": ["spreadsheet", "xls", "xlsx", "csv", "excel"],
 	"homepage": "https://github.com/collei/excel-reader",
-	"version": "0.1.0-alpha",
+	"version": "v0.1.1",
 	"time": "2024-02-08",
 	"type": "library",
 	"license": ["MIT"],
