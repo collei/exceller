@@ -72,8 +72,6 @@ class ImporterReader extends Reader
 		$sheetImporters = $multipleImporter->sheets();
 		// get the sheet count
 		$sheetCount = $this->spreadsheet->getSheetCount();
-		// find the last index
-		$lastSheet = $sheetCount - 1;
 		// read sheet counter
 		$readSheet = 0;
 		// info about failed sheets
@@ -82,34 +80,39 @@ class ImporterReader extends Reader
 		// iterate
 		foreach ($sheetImporters as $name => $importer) {
 			// sheet by index
-			if (is_int($name) && ($name >= 0) && ($name <= $lastSheet)) {
-				// select sheet
-				$sheet = $this->spreadsheet->getSheet($name);
+			if (is_int($name) && ($name >= 0) && ($name < $sheetCount)) {
 				// call the importer
-				if ($this->importSingle($sheet, $importer)) {
+				if ($this->importSingle($name, $importer)) {
 					++$readSheet;
 				} else {
 					$errorSheetNames[] = $name;
 				}
+				//
+				continue;
 			}
 			// sheet by name
-			elseif (is_string($name) && ($sheet = $this->spreadsheet->getSheetByName($name))) {
+			elseif (is_string($name) && $this->spreadsheet->sheetNameExists($name)) {
 				// call the importer
-				if ($this->importSingle($sheet, $importer)) {
+				if ($this->importSingle($name, $importer)) {
 					++$readSheet;
 				} else {
 					$errorSheetNames[] = $name;
 				}
+				//
+				continue;
 			}
-			//
+
+			/* n o t *\
+			\* found */
+
 			if ($multipleImporter instanceof SkipsUnknownSheets) {
 				// notify about the missing sheet
 				$multipleImporter->onUnknownSheet($name);
+			} else {
+				throw new SheetNotFoundException(
+					sprintf('Sheet %s not found in the file', $name)
+				);
 			}
-			//
-			throw new SheetNotFoundException(
-				sprintf('Sheet %s not found in the file', $name)
-			);
 		}
 
 		// report if requested
@@ -160,23 +163,28 @@ class ImporterReader extends Reader
 			$endColumn = $importer->endColumn();
 		}
 
+		// if $hasDataHeader === true, leave it null.
+		// Otherwise (if custom headings given, then obtain them, else leave it empty)
+		$customHeadings = $hasDataHeader
+			? null
+			: ($importer instanceof WithHeadings ? $importer->headings() : []);
+
 		// pick the sheet reference
 		$sheet = empty($sheetName) ? $this->openSheet() : $this->openSheet($sheetName);
 
-
 		if ($importer instanceof OnEachRow) {
 			return $this->doImportOnEachRow(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $hasDataHeader, $throwOnError
+				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
 		elseif ($importer instanceof ToEachRow) {
 			return $this->doImportToEachRow(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $hasDataHeader, $throwOnError
+				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
 		elseif ($importer instanceof ToArray) {
 			return $this->doImportToArray(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $hasDataHeader, $throwOnError
+				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
 
@@ -191,6 +199,7 @@ class ImporterReader extends Reader
 	 * @param int $startRow
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
+	 * @param array $customHeadings = null,
 	 * @param bool $hasDataHeader = true
 	 * @param bool $throwOnError = true
 	 * @throws \Collei\Exceller\Exceptions\ExcellerException
@@ -201,6 +210,7 @@ class ImporterReader extends Reader
 		int $startRow,
 		int $endRow = null,
 		string $endColumn = null,
+		array $customHeadings = null,
 		bool $hasDataHeader = true,
 		bool $throwOnError = true
 	) {
@@ -218,14 +228,14 @@ class ImporterReader extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
 				);
 			}
 			catch (Exception $e) {
@@ -245,6 +255,7 @@ class ImporterReader extends Reader
 	 * @param int $startRow
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
+	 * @param array $customHeadings = null,
 	 * @param bool $hasDataHeader = true
 	 * @param bool $throwOnError = true
 	 * @throws \Collei\Exceller\Exceptions\ExcellerException
@@ -255,6 +266,7 @@ class ImporterReader extends Reader
 		int $startRow,
 		int $endRow = null,
 		string $endColumn = null,
+		array $customHeadings = null,
 		bool $hasDataHeader = true,
 		bool $throwOnError = true
 	) {
@@ -272,14 +284,14 @@ class ImporterReader extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
 				);
 			}
 			catch (Exception $e) {
@@ -299,6 +311,7 @@ class ImporterReader extends Reader
 	 * @param int $startRow
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
+	 * @param array $customHeadings = null,
 	 * @param bool $hasDataHeader = true
 	 * @param bool $throwOnError = true
 	 * @throws \Collei\Exceller\Exceptions\ExcellerException
@@ -309,6 +322,7 @@ class ImporterReader extends Reader
 		int $startRow,
 		int $endRow = null,
 		string $endColumn = null,
+		array $customHeadings = null,
 		bool $hasDataHeader = true,
 		bool $throwOnError = true
 	) {
@@ -328,14 +342,14 @@ class ImporterReader extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
 				);
 			}
 			catch (Exception $e) {
