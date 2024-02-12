@@ -20,7 +20,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  *
  * @author Alarido Su <alarido.su@gmail.com>
  */
-class ImporterReader extends Reader
+class ClassReader extends Reader
 {
 	/**
 	 * @var bool
@@ -40,7 +40,7 @@ class ImporterReader extends Reader
 
 		$this->throwOnError = $throwOnError;
 
-		$this->startImporting($importer);
+		$this->import($importer);
 	}
 
 	/**
@@ -49,7 +49,7 @@ class ImporterReader extends Reader
 	 * @param object $importer
 	 * @return void
 	 */
-	protected function startImporting(object $importer)
+	protected function import(object $importer)
 	{
 		if ($importer instanceof WithMultipleSheets) {
 			$this->importMultiple($importer, $this->throwOnError);
