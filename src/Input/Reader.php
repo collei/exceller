@@ -103,7 +103,8 @@ abstract class Reader
 		Closure $callback,
 		int $startRow = 1,
 		int $endRow = null,
-		string $endColumn = null
+		string $endColumn = null,
+		array $customHeadings = null
 	) {
 		if ($startRow < 1) {
 			throw new RuntimeException('First line must not be lesser than 1');
@@ -159,6 +160,22 @@ abstract class Reader
 			} else {
 				// filter empty cells from the title row
 				$headerLine = $originalTitleLine = array_filter($row, [self::class, 'isNotEmpty']);
+
+				// if $customHeadings is given, use them 
+				if (is_array($customHeadings)) {
+					$columnCount = count($headerLine);
+
+					// if size doesn't fit, numeric arrays will be issued
+					if (empty($customHeadings) || count($customHeadings) !== $columnCount) {
+						$customHeadings = range(0, $columnCount);
+					}
+
+					// appropriate the custom headings
+					foreach ($headerLine as $key => $value) {
+						$headerLine[$key] = array_shift($customHeadings);
+					}
+				}
+
 				// make sanitization for extracting identifiers
 				$header = array_map([self::class, 'sanitizeIdentifier'], $headerLine);
 				//
