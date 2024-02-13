@@ -29,6 +29,11 @@ abstract class Reader
 	protected $spreadsheet;
 
 	/**
+	 * @var array
+	 */
+	protected $reports = [];
+
+	/**
 	 * Initialize an instance for $fileName
 	 *
 	 * @param string $fileName
@@ -64,6 +69,21 @@ abstract class Reader
 	}
 
 	/**
+	 * Adds a report to the report list.
+	 *
+	 * @param array $info
+	 * @return $this
+	 */
+	protected function addReport(array $info)
+	{
+		$timestamp = new DateTime();
+
+		$this->reports[] = $info + compact('timestamp');
+
+		return $this;
+	}
+	
+	/**
 	 * Open a worksheet from the spreadsheet
 	 *
 	 * @return \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet
@@ -89,9 +109,13 @@ abstract class Reader
 		return $this->spreadsheet->getActiveSheet();
 	}
 
+	/* internal *\
+	\* mechanic */
+
 	/**
 	 * Process sheet lines, one by one, bringing them to the Closure.
 	 *
+	 * @static
 	 * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
 	 * @param \Closure $callback
 	 * @param int $startRow = 1
@@ -201,6 +225,7 @@ abstract class Reader
 	/**
 	 * Sanitizes title contents to make them become identifier.
 	 *
+	 * @static
 	 * @param string $identifier
 	 * @return string
 	 */
@@ -228,6 +253,7 @@ abstract class Reader
 	 * Tells if the argument is not really empty.
 	 * Returns false even for a string like '  ' (spaces)
 	 *
+	 * @static
 	 * @param mixed $string
 	 * @return bool
 	 */

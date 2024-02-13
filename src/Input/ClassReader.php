@@ -115,14 +115,17 @@ class ClassReader extends Reader
 			}
 		}
 
-		// report if requested
+		// obtain sheet names
+		$sheetNames = array_keys($sheetImporters);
+		// prepare the package
+		$info = compact('sheetCount','readCount','sheetNames','errorSheetNames');
+
+		// add report to reader instance
+		$this->addReport($info);
+
+		// report to importer class if requested
 		if ($multipleImporter instanceof WithImportingReports) {
-			// obtain sheet names
-			$sheetNames = array_keys($sheetImporters);
-			// prepare the package
-			$info = (object) compact('sheetCount','readCount','sheetNames','errorSheetNames');
-			// report it
-			$multipleImporter->report($info);
+			$multipleImporter->report((object) $info);
 		}
 
 		// return if all sheets were read successfully
