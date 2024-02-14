@@ -6,12 +6,20 @@ use Collei\Exceller\Concerns\WithHeadingRow;
 use Collei\Exceller\Concerns\WithLimit;
 use Collei\Exceller\Concerns\WithMultipleSheets;
 use Collei\Exceller\Concerns\WithStartRow;
+use Collei\Exceller\Concerns\WithEvents;
 use Collei\Exceller\Concerns\OnEachRow;
 use Collei\Exceller\Concerns\ToEachRow;
 use Collei\Exceller\Concerns\ToArray;
 use Collei\Exceller\Concerns\WithImportingReports;
 use Collei\Exceller\Concerns\SkipsUnknownSheets;
+use Collei\Exceller\Events\Event;
+use Collei\Exceller\Events\AfterImport;
+use Collei\Exceller\Events\AfterSheet;
+use Collei\Exceller\Events\BeforeImport;
+use Collei\Exceller\Events\BeforeSheet;
+use Collei\Exceller\Events\ImportFailed;
 use Collei\Exceller\Exceptions\SheetNotFoundException;
+
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 
@@ -20,12 +28,17 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  *
  * @author Alarido Su <alarido.su@gmail.com>
  */
-class ClassReader extends Reader
+class Importer extends Reader
 {
 	/**
 	 * @var bool
 	 */
 	protected $throwOnError = true;
+
+	/**
+	 * @var array
+	 */
+	protected $listeners = [];
 
 	/**
 	 * Initialize an instance for $fileName
@@ -40,6 +53,10 @@ class ClassReader extends Reader
 
 		$this->throwOnError = $throwOnError;
 
+		if ($importer instanceof WithEvents) {
+			$this->listeners = $importer->registerEvents();
+		}
+
 		$this->import($importer);
 	}
 
@@ -51,6 +68,9 @@ class ClassReader extends Reader
 	 */
 	protected function import(object $importer)
 	{
+		// before start importing
+		$this->notifyEvent(new BeforeImport($importer));
+
 		if ($importer instanceof WithMultipleSheets) {
 			$this->importMultiple($importer, $this->throwOnError);
 
@@ -58,6 +78,9 @@ class ClassReader extends Reader
 		}
 
 		$this->importSingle(null, $importer, $this->throwOnError);
+
+		// after finish importing
+		$this->notifyEvent(new AfterImport($importer));
 	}
 
 	/**
@@ -79,36 +102,36 @@ class ClassReader extends Reader
 
 		// iterate
 		foreach ($sheetImporters as $name => $importer) {
-			// sheet by index
-			if (is_int($name) && ($name >= 0) && ($name < $sheetCount)) {
-				// call the importer
-				if ($this->importSingle($name, $importer)) {
-					++$readSheet;
-				} else {
-					$errorSheetNames[] = $name;
-				}
-				//
-				continue;
-			}
-			// sheet by name
-			elseif (is_string($name) && $this->spreadsheet->sheetNameExists($name)) {
-				// call the importer
-				if ($this->importSingle($name, $importer)) {
-					++$readSheet;
-				} else {
-					$errorSheetNames[] = $name;
-				}
-				//
-				continue;
-			}
+			// check if the given sheet exists
+			$sheetExists = false
+				|| (is_int($name) && ($name >= 0) && ($name < $sheetCount))
+				|| (is_string($name) && $this->spreadsheet->sheetNameExists($name));
 
-			/* n o t *\
-			\* found */
+			// sheet by index
+			if ($sheetExists) {
+				// before sheet
+				$this->notifyEvent(new BeforeSheet($multipleImporter, $name));
+
+				// call the importer
+				if ($this->importSingle($name, $importer)) {
+					++$readSheet;
+				} else {
+					$errorSheetNames[] = $name;
+				}
+				//
+				// after sheet
+				$this->notifyEvent(new AfterSheet($multipleImporter, $name));
+
+				// go next sheet
+				continue;
+			}
 
 			if ($multipleImporter instanceof SkipsUnknownSheets) {
 				// notify about the missing sheet
 				$multipleImporter->onUnknownSheet($name);
+				//
 			} else {
+				// throws it
 				throw new SheetNotFoundException(
 					sprintf('Sheet %s not found in the file', $name)
 				);
@@ -176,22 +199,41 @@ class ClassReader extends Reader
 		$sheet = empty($sheetName) ? $this->openSheet() : $this->openSheet($sheetName);
 
 		if ($importer instanceof OnEachRow) {
-			return $this->doImportOnEachRow(
+			$boolResult = $this->doImportOnEachRow(
 				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
 		elseif ($importer instanceof ToEachRow) {
-			return $this->doImportToEachRow(
+			$boolResult = $this->doImportToEachRow(
 				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
 		elseif ($importer instanceof ToArray) {
-			return $this->doImportToArray(
+			$boolResult = $this->doImportToArray(
 				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
 
-		return false;
+		if (! $boolResult) {
+			// on import fail
+			$this->notifyEvent(new ImportFailed($importer, $sheetName));
+		}
+
+		return $boolResult;
+	}
+
+	/**
+	 * Notify about events.
+	 *
+	 * @param \Collei\Exceller\Events\Event $event
+	 */
+	protected function notifyEvent(Event $event)
+	{
+		$class = get_class($event);
+
+		if ($listener = $this->listeners[$class] ?? null) {
+			call_user_func($listener, $event);
+		}
 	}
 
 	/**

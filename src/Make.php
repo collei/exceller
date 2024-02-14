@@ -2,7 +2,7 @@
 namespace Collei\Exceller;
 
 use Collei\Exceller\Input\ArrayReader;
-use Collei\Exceller\Input\ClassReader;
+use Collei\Exceller\Input\Importer;
 use Collei\Exceller\Input\ClosureReader;
 use Collei\Exceller\Concerns\ShouldThrowExceptions;
 use Closure;
@@ -182,7 +182,7 @@ abstract class Make
 
 		$throwOnError = $instance instanceof ShouldThrowExceptions;
 
-		return new ClassReader($this->fileName, $instance);
+		return new Importer($this->fileName, $instance);
 	}
 
 }
