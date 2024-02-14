@@ -11,7 +11,25 @@ use InvalidArgumentException;
 
 abstract class Make
 {
+	/**
+	 * @var string
+	 */
 	protected $fileName;
+
+	/**
+	 * @var int
+	 */
+	protected $startLine = 1;
+
+	/**
+	 * @var bool
+	 */
+	protected $hasHeader = true;
+
+	/**
+	 * @var int|string|null
+	 */
+	protected $sheetIndex = null;
 
 	/**
 	 * Used by the Do::read() static method only.
@@ -27,6 +45,7 @@ abstract class Make
 	/**
 	 * Start a new instance with a known filename.
 	 *
+	 * @static
 	 * @param string $fileName
 	 * @return instanceof Make
 	 */
@@ -36,41 +55,104 @@ abstract class Make
 	}
 
 	/**
+	 * Determine the start row from which proceed.
+	 *
+	 * @param int $start
+	 * @return $this
+	 */
+	public function fromLine(int $start)
+	{
+		$this->startLine = ($start > 0) ? $start : 1;
+		//
+		return $this;
+	}
+
+	/** 
+	 * Alias of static::fromLine().
+	 *
+	 * @param int $start
+	 * @return $this
+	 */
+	public function fromRow(int $start)
+	{
+		return $this->fromLine($start);
+	}
+
+	/**
+	 * Determine which sheet should be read.
+	 *
+	 * @param int $index
+	 * @return $this
+	 */
+	public function sheet(int $index)
+	{
+		$this->sheetIndex = ($start >= 0) ? $start : null;
+		//
+		return $this;
+	}
+
+	/**
+	 * Determine by name which sheet should be read.
+	 *
+	 * @param string $name
+	 * @return $this
+	 */
+	public function sheetName(string $name)
+	{
+		$this->sheetIndex = $name ?: null;
+		//
+		return $this;
+	}
+
+	/**
+	 * Determine if header should not be discarded.
+	 *
+	 * @return $this
+	 */
+	public function withHeader()
+	{
+		$this->hasHeader = true;
+		//
+		return $this;
+	}
+
+	/**
+	 * Determine if header should be discarded.
+	 *
+	 * @return $this
+	 */
+	public function withoutHeader()
+	{
+		$this->hasHeader = false;
+		//
+		return $this;
+	}
+
+	/**
 	 * Import rows from spreadsheet into a PHP array.
 	 *
-	 * @param int $startLine = 1
-	 * @param string $sheet = null
-	 * @param bool $hasHeader = true
 	 * @return array
 	 */
-	public function toArray(
-		int $startLine = 1,
-		string $sheet = null,
-		bool $hasHeader = true
-	) {
+	public function toArray()
+	{
 		$reader = new ArrayReader($this->fileName);
 
-		return $reader->selectSheet($sheet)->readIntoArray($startLine, $hasHeader);
+		return $reader->selectSheet($this->sheetIndex)
+					->readIntoArray($this->startLine, $this->hasHeader);
 	}
 
 	/**
 	 * Import rows from spreadsheet, one by one, by using a callback function.
 	 *
 	 * @param \Closure $callback
-	 * @param int $startLine = 1
-	 * @param string $sheet = null
-	 * @param bool $hasHeader = true
 	 * @return array
 	 */
-	public function withClosure(
-		Closure $callback,
-		int $startLine = 1,
-		string $sheet = null,
-		bool $hasHeader = true
-	) {
+	public function withClosure(Closure $callback)
+	{
 		$reader = new ClosureReader($this->fileName);
 
-		return $reader->selectSheet($sheet)->readRowsWith($callback, $startLine, $hasHeader);
+		return $reader->selectSheet($this->sheetIndex)
+					->readRowsWith($callback, $this->startLine, $this->hasHeader);
 	}
 
 	/**
@@ -80,9 +162,8 @@ abstract class Make
 	 * @param object|string $classOrInstance
 	 * @return int
 	 */
-	public function using(
-		$classOrInstance
-	) {
+	public function using($classOrInstance)
+	{
 		if (is_string($classOrInstance)) {
 			if (class_exists($classOrInstance)) {
 				$instance = new $classOrInstance();
@@ -101,9 +182,7 @@ abstract class Make
 
 		$throwOnError = $instance instanceof ShouldThrowExceptions;
 
-		$reader = new ClassReader($this->fileName, $instance);
-
-		return $reader->selectSheet($sheet)->readRowsWith($callback, $startLine, $hasHeader);
+		return new ClassReader($this->fileName, $instance);
 	}
 
 }
