@@ -71,13 +71,12 @@ class Importer extends Reader
 		// before start importing
 		$this->notifyEvent(new BeforeImport($importer));
 
+		// the importing
 		if ($importer instanceof WithMultipleSheets) {
 			$this->importMultiple($importer, $this->throwOnError);
-
-			return;
+		} else {
+			$this->importSingle(null, $importer, $this->throwOnError);
 		}
-
-		$this->importSingle(null, $importer, $this->throwOnError);
 
 		// after finish importing
 		$this->notifyEvent(new AfterImport($importer));
@@ -141,7 +140,7 @@ class Importer extends Reader
 		// obtain sheet names
 		$sheetNames = array_keys($sheetImporters);
 		// prepare the package
-		$info = compact('sheetCount','readCount','sheetNames','errorSheetNames');
+		$info = compact('sheetCount','readSheet','sheetNames','errorSheetNames');
 
 		// add report to reader instance
 		$this->addReport($info);
