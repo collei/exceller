@@ -1,12 +1,11 @@
 <?php
+namespace Collei\Exceller\Concerns;
 
-namespace Maatwebsite\Excel\Concerns;
-
-use Maatwebsite\Excel\Events\AfterImport;
-use Maatwebsite\Excel\Events\AfterSheet;
-use Maatwebsite\Excel\Events\BeforeImport;
-use Maatwebsite\Excel\Events\BeforeSheet;
-use Maatwebsite\Excel\Events\ImportFailed;
+use Collei\Exceller\Events\AfterImport;
+use Collei\Exceller\Events\AfterSheet;
+use Collei\Exceller\Events\BeforeImport;
+use Collei\Exceller\Events\BeforeSheet;
+use Collei\Exceller\Events\ImportFailed;
 
 trait RegistersEventListeners
 {
