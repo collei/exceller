@@ -10,6 +10,7 @@ use Collei\Exceller\Concerns\WithEvents;
 use Collei\Exceller\Concerns\OnEachRow;
 use Collei\Exceller\Concerns\ToEachRow;
 use Collei\Exceller\Concerns\ToArray;
+use Collei\Exceller\Concerns\ToArrayBlocks;
 use Collei\Exceller\Concerns\WithImportingReports;
 use Collei\Exceller\Concerns\SkipsUnknownSheets;
 use Collei\Exceller\Events\Event;
@@ -212,6 +213,11 @@ class Importer extends Reader
 				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
 			);
 		}
+		elseif ($importer instanceof ToArrayBlocks) {
+			$boolResult = $this->doImportToArrayBlocks(
+				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
+			);
+		}
 
 		if (! $boolResult) {
 			// on import fail
@@ -408,4 +414,83 @@ class Importer extends Reader
 		return true;
 	}
 
+	/**
+	 * Import rows from spreadsheet by using a ToArrayBlocks instance.
+	 *
+	 * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
+	 * @param \Collei\Exceller\Concerns\ToArrayBlocks $importer
+	 * @param int $startRow
+	 * @param int $endRow = null
+	 * @param string $endColumn = null
+	 * @param array $customHeadings = null,
+	 * @param bool $hasDataHeader = true
+	 * @param bool $throwOnError = true
+	 * @throws \Collei\Exceller\Exceptions\ExcellerException
+	 */
+	protected function doImportToArrayBlocks(
+		Worksheet $sheet,
+		ToArrayBlocks $importer,
+		int $startRow,
+		int $endRow = null,
+		string $endColumn = null,
+		array $customHeadings = null,
+		bool $hasDataHeader = true,
+		bool $throwOnError = true
+	) {
+		// data lines here
+		$bInfo = (object) [
+			'count' => 0,
+			'maxSize' => $importer->size(),
+			'lines' => [],
+		];
+		// initialize line control
+		$firstLine = $hasDataHeader;
+		// importer lambda function
+		$rowImporterFunction = function($row) use ($importer, $bInfo, &$firstLine) {
+			// if heading must be discarded
+			if ($firstLine) {
+				$firstLine = false;
+				return;
+			}
+
+			if ($bInfo->count === $bInfo->maxSize) {
+				// send the block
+				$importer->block($bInfo->lines);
+				// reset counters
+				$bInfo->lines = [];
+				$bInfo->count = 0;
+			} else {
+				// save row in the current block
+				$bInfo->lines[] = $row;
+				// and update counter
+				$bInfo->count++;
+			}
+		};
+
+		// if $throwOnError == true, let the exceptions show themselves
+		if ($throwOnError) {
+			$lineCount = static::processSheet(
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+			);
+		}
+		// otherwise, let us confine them for a graceful fail 
+		else {
+			try {
+				$lineCount = static::processSheet(
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+				);
+			}
+			catch (Exception $e) {
+				return false;
+			}
+		}
+
+		// send the last block
+		if (0 !== $bInfo->count) {
+			$importer->block($bInfo->lines);
+		}
+
+		// data extracted successfully
+		return true;
+	}
 }
