@@ -120,6 +120,10 @@ abstract class Reader
 	 * @param \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet
 	 * @param \Closure $callback
 	 * @param int $startRow = 1
+	 * @param int $endRow = null
+	 * @param string $endColumn = null
+	 * @param array $customHeadings = null
+	 * @param bool $groupedHeadings = false
 	 * @return array
 	 * @throws \RuntimeException if $startRow is lesser then 1
 	 */
@@ -129,7 +133,8 @@ abstract class Reader
 		int $startRow = 1,
 		int $endRow = null,
 		string $endColumn = null,
-		array $customHeadings = null
+		array $customHeadings = null,
+		bool $groupedHeadings = false
 	) {
 		if ($startRow < 1) {
 			throw new RuntimeException('First line must not be lesser than 1');
@@ -177,8 +182,36 @@ abstract class Reader
 			// if the title row got captured
 			if ($headerLine) {
 				// capture data from existing title row columns only
-				foreach ($headerLine as $k => $v) {
-					$trimmedLine[$v['sanitized']] = $row[$k];
+				if ($groupedHeadings) {
+					// allow for multiple columns with same name
+					// to be captured as an array of data
+					foreach ($headerLine as $k => $v) {
+						$colName = $v['sanitized'];
+						//
+						if (isset($trimmedLine[$colName])) {
+							// if two or more, turn it in an array
+							// so all values can be accomodated
+							if (is_array($trimmedLine[$colName])) {
+								$trimmedLine[$colName][] = $row[$k];
+							} else {
+								$trimmedLine[$colName] = [$trimmedLine[$colName], $row[$k]];
+							}
+						} else {
+							// if just one, keep it scalar
+							$trimmedLine[$colName] = $row[$k];
+						}
+					}
+				} else {
+					// captures only the first column of each name
+					// when there are two or more with same name
+					foreach ($headerLine as $k => $v) {
+						$colName = $v['sanitized'];
+						//
+						// avoid content override (preserves the first non-empty)
+						if (empty($trimmedLine[$colName])) {
+							$trimmedLine[$colName] = $row[$k];
+						}
+					}
 				}
 				// send the row via the callback
 				$callback($trimmedLine);

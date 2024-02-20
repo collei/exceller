@@ -3,6 +3,7 @@ namespace Collei\Exceller\Input;
 
 use Collei\Exceller\Concerns\WithColumnLimit;
 use Collei\Exceller\Concerns\WithHeadingRow;
+use Collei\Exceller\Concerns\WithGroupedHeadingRow;
 use Collei\Exceller\Concerns\WithLimit;
 use Collei\Exceller\Concerns\WithMultipleSheets;
 use Collei\Exceller\Concerns\WithStartRow;
@@ -270,6 +271,8 @@ class Importer extends Reader
 	) {
 		// initialize line control
 		$firstLine = $hasDataHeader;
+		// configure if headings should be grouped
+		$groupedHeadings = $importer instanceof WithGroupedHeadingRow;
 		// importer lambda function
 		$rowImporterFunction = function($row) use ($importer, &$firstLine) {
 			if ($firstLine) {
@@ -282,14 +285,14 @@ class Importer extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 				);
 			}
 			catch (Exception $e) {
@@ -326,6 +329,8 @@ class Importer extends Reader
 	) {
 		// initialize line control
 		$firstLine = $hasDataHeader;
+		// configure if headings should be grouped
+		$groupedHeadings = $importer instanceof WithGroupedHeadingRow;
 		// importer lambda function
 		$rowImporterFunction = function($row) use ($importer, &$firstLine) {
 			if ($firstLine) {
@@ -338,14 +343,14 @@ class Importer extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 				);
 			}
 			catch (Exception $e) {
@@ -384,6 +389,8 @@ class Importer extends Reader
 		$array = [];
 		// initialize line control
 		$firstLine = $hasDataHeader;
+		// configure if headings should be grouped
+		$groupedHeadings = $importer instanceof WithGroupedHeadingRow;
 		// importer lambda function
 		$rowImporterFunction = function($row) use (&$array, &$firstLine) {
 			if ($firstLine) {
@@ -396,14 +403,14 @@ class Importer extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 				);
 			}
 			catch (Exception $e) {
@@ -449,6 +456,8 @@ class Importer extends Reader
 		];
 		// initialize line control
 		$firstLine = $hasDataHeader;
+		// configure if headings should be grouped
+		$groupedHeadings = $importer instanceof WithGroupedHeadingRow;
 		// importer lambda function
 		$rowImporterFunction = function($row) use ($importer, $bInfo, &$firstLine) {
 			// if heading must be discarded
@@ -474,14 +483,14 @@ class Importer extends Reader
 		// if $throwOnError == true, let the exceptions show themselves
 		if ($throwOnError) {
 			$lineCount = static::processSheet(
-				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+				$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 			);
 		}
 		// otherwise, let us confine them for a graceful fail 
 		else {
 			try {
 				$lineCount = static::processSheet(
-					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings
+					$sheet, $rowImporterFunction, $startRow, $endRow, $endColumn, $customHeadings, $groupedHeadings
 				);
 			}
 			catch (Exception $e) {
