@@ -126,7 +126,11 @@ class Importer extends Reader
 				continue;
 			}
 
-			if ($multipleImporter instanceof SkipsUnknownSheets) {
+			if ($importer instanceof SkipsUnknownSheets) {
+				// notify about the missing sheet
+				$importer->onUnknownSheet($name);
+				//
+			} elseif ($multipleImporter instanceof SkipsUnknownSheets) {
 				// notify about the missing sheet
 				$multipleImporter->onUnknownSheet($name);
 				//
@@ -457,8 +461,8 @@ class Importer extends Reader
 				// send the block
 				$importer->block($bInfo->lines);
 				// reset counters
-				$bInfo->lines = [];
-				$bInfo->count = 0;
+				$bInfo->lines = [$row];
+				$bInfo->count = 1;
 			} else {
 				// save row in the current block
 				$bInfo->lines[] = $row;
