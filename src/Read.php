@@ -9,7 +9,7 @@ use Closure;
 use RuntimeException;
 use InvalidArgumentException;
 
-abstract class Make
+abstract class Read
 {
 	/**
 	 * @var string
@@ -49,9 +49,9 @@ abstract class Make
 	 * @param string $fileName
 	 * @return instanceof Make
 	 */
-	public static function read(string $fileName)
+	public static function file(string $fileName)
 	{
-		return new class($fileName) extends Make {};
+		return new class($fileName) extends Read {};
 	}
 
 	/**
@@ -179,8 +179,6 @@ abstract class Make
 				sprintf('Argument 2: expected a class name or instance, but given %s.', gettype($classOrInstance))
 			);
 		}
-
-		$throwOnError = $instance instanceof ShouldThrowExceptions;
 
 		return new Importer($this->fileName, $instance);
 	}
