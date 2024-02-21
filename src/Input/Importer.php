@@ -13,6 +13,7 @@ use Collei\Exceller\Concerns\ToEachRow;
 use Collei\Exceller\Concerns\ToArray;
 use Collei\Exceller\Concerns\ToArrayBlocks;
 use Collei\Exceller\Concerns\WithImportingReports;
+use Collei\Exceller\Concerns\ShouldThrowExceptions;
 use Collei\Exceller\Concerns\SkipsUnknownSheets;
 use Collei\Exceller\Events\Event;
 use Collei\Exceller\Events\AfterImport;
@@ -43,17 +44,17 @@ class Importer extends Reader
 	protected $listeners = [];
 
 	/**
-	 * Initialize an instance for $fileName
+	 * Initialize an instance for $fileName using $importer
 	 *
 	 * @param string $fileName
-	 * @param string|int $whichSheet = null
+	 * @param object $importer
 	 * @return void
 	 */
-	public function __construct(string $fileName, object $importer, bool $throwOnError = true)
+	public function __construct(string $fileName, object $importer)
 	{
 		parent::__construct($fileName, null);
 
-		$this->throwOnError = $throwOnError;
+		$this->throwOnError = $importer instanceof ShouldThrowExceptions;
 
 		if ($importer instanceof WithEvents) {
 			$this->listeners = $importer->registerEvents();
