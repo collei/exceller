@@ -7,12 +7,14 @@ Read excel files with ease.
 *  PHPOffice/PHPSpreadsheet 1.17.0 or newer
 
 ### Current Features
-*  Reads excel files into array
-*  Capability of importing rows with user-defined importer classes
+*  Reads excel sheets into arrays;
+*  Imports excel sheets with user-defined importer classes;
+*  Multiple sheet imports with support for skip missing sheets, conditional importing, grouped rows;
+*  Localized event handling on importers themselves;
+*  Shorthand helpers for importing;
 
 #### To be added
-*  Shorthand helpers
-*  And... who knows?
+*  ...??
 
 ### Testing
 1. Unpack the `test.zip` file and navigate to the `test` folder;
