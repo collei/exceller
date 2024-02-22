@@ -201,36 +201,58 @@ class Importer extends Reader
 			? null
 			: ($importer instanceof WithHeadings ? $importer->headings() : []);
 
-		// pick the sheet reference
-		$sheet = empty($sheetName) ? $this->openSheet() : $this->openSheet($sheetName);
+		// if $sheetName is given, it remains in the list; otherwise, every sheet goes in.
+		// It allows importing of every sheet using the same importer
+		$sheetNameList = array_filter($this->getSheetNames(), function ($val, $k) use ($sheetName) {
+			// if no sheet was selected, let's include them all
+			if (empty($sheetName)) {
+				return true;
+			}
+			// strict compares
+			return ($sheetName === $val) || ($sheetName === $k);
+		}, ARRAY_FILTER_USE_BOTH);
 
-		if ($importer instanceof OnEachRow) {
-			$boolResult = $this->doImportOnEachRow(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
-			);
-		}
-		elseif ($importer instanceof ToEachRow) {
-			$boolResult = $this->doImportToEachRow(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
-			);
-		}
-		elseif ($importer instanceof ToArray) {
-			$boolResult = $this->doImportToArray(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
-			);
-		}
-		elseif ($importer instanceof ToArrayBlocks) {
-			$boolResult = $this->doImportToArrayBlocks(
-				$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
-			);
+		$totalBoolResult = true;
+
+		foreach ($sheetNameList as $index => $name) {
+			// pick the sheet reference
+			$sheet = $this->openSheet($sheetName);
+
+			// Skips empty sheets
+			if (empty($sheet->getCoordinates())) {
+				continue;
+			}
+
+			if ($importer instanceof OnEachRow) {
+				$boolResult = $this->doImportOnEachRow(
+					$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
+				);
+			}
+			elseif ($importer instanceof ToEachRow) {
+				$boolResult = $this->doImportToEachRow(
+					$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
+				);
+			}
+			elseif ($importer instanceof ToArray) {
+				$boolResult = $this->doImportToArray(
+					$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
+				);
+			}
+			elseif ($importer instanceof ToArrayBlocks) {
+				$boolResult = $this->doImportToArrayBlocks(
+					$sheet, $importer, $startRow, $endRow, $endColumn, $customHeadings, $hasDataHeader, $throwOnError
+				);
+			}
+
+			if (! $boolResult) {
+				// on import fail
+				$this->notifyEvent(new ImportFailed($importer, $sheetName));
+			}
+
+			$totalBoolResult = $totalBoolResult && $boolResult;
 		}
 
-		if (! $boolResult) {
-			// on import fail
-			$this->notifyEvent(new ImportFailed($importer, $sheetName));
-		}
-
-		return $boolResult;
+		return $totalBoolResult;
 	}
 
 	/**
