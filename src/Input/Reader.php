@@ -6,6 +6,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Collei\Exceller\Support\Str;
 use Closure;
 use DateTime;
+use InvalidArgumentException;
 
 /**
  * Basic input engine for spreadsheet row readers;
@@ -67,6 +68,38 @@ abstract class Reader
 		}
 
 		return $this;
+	}
+	
+	/**
+	 * Check if the given sheet name or index exists.
+	 *
+	 * @param int|string $whichSheet
+	 * @return bool
+	 * @throws InvalidArgumentException
+	 */
+	public function hasSheet($whichSheet)
+	{
+		if (is_int($whichSheet)) {
+			return ($whichSheet >= 0) && ($whichSheet < $this->spreadsheet->getSheetCount());
+		}
+
+		if (is_string($whichSheet)) {
+			return $this->spreadsheet->sheetNameExists($whichSheet);
+		}
+
+		throw new InvalidArgumentException(
+			sprintf('Argument should be int or string, but given %s', gettype($whichSheet))
+		);
+	}
+	
+	/**
+	 * Get a list of the available sheet names.
+	 *
+	 * @return array
+	 */
+	public function getSheetNames()
+	{
+		return $this->spreadsheet->getSheetNames();
 	}
 
 	/**
