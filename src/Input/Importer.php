@@ -216,7 +216,7 @@ class Importer extends Reader
 
 		foreach ($sheetNameList as $index => $name) {
 			// pick the sheet reference
-			$sheet = $this->openSheet($sheetName);
+			$sheet = $this->openSheet($name);
 
 			// Skips empty sheets
 			if (empty($sheet->getCoordinates())) {
