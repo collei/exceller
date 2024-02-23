@@ -286,7 +286,7 @@ abstract class Reader
 		}
 
 		// header goes here
-		return $header;
+		return $headerLine;
 	}
 
 	/**
