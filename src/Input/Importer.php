@@ -8,6 +8,7 @@ use Collei\Exceller\Concerns\WithLimit;
 use Collei\Exceller\Concerns\WithMultipleSheets;
 use Collei\Exceller\Concerns\WithStartRow;
 use Collei\Exceller\Concerns\WithEvents;
+use Collei\Exceller\Concerns\ReferencesCurrentSheet;
 use Collei\Exceller\Concerns\OnEachRow;
 use Collei\Exceller\Concerns\ToEachRow;
 use Collei\Exceller\Concerns\ToArray;
@@ -180,6 +181,9 @@ class Importer extends Reader
 		// Does have a heading row?
 		$hasDataHeader = $importer instanceof WithHeadingRow;
 
+		// Does the importer use the ReferencesCurrentSheet trait?
+		$hasReferenceSheetTrait = in_array(ReferencesCurrentSheet::class, class_uses($importer));
+
 		// Does have a different starting row?
 		if ($importer instanceof WithStartRow) {
 			$startRow = $importer->start();
@@ -217,6 +221,11 @@ class Importer extends Reader
 		foreach ($sheetNameList as $index => $name) {
 			// pick the sheet reference
 			$sheet = $this->openSheet($name);
+
+			// if requested to, informs the current sheet being read
+			if ($hasReferenceSheetTrait) {
+				$importer->setSheet($sheet);
+			}
 
 			// Skips empty sheets
 			if (empty($sheet->getCoordinates())) {
