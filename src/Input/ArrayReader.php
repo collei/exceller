@@ -25,7 +25,6 @@ class ArrayReader extends Reader
 
 		$data = [];
 		$dataHeader = null;
-
 		$firstLine = $hasDataHeader;
 
 		$linhas = static::processSheet($sheet, function($row) use (&$data, &$dataHeader, &$firstLine){
@@ -35,7 +34,7 @@ class ArrayReader extends Reader
 			} else {
 				$data[] = $row;
 			}
-		}, $startLine);
+		}, $startLine, null, null, $hasDataHeader);
 
 		return compact('dataHeader','data');
 	}
