@@ -15,11 +15,16 @@
 	],
 	"require": {
 		"php": ">=7.2",
-		"phpoffice/phpspreadsheet": "^1.17"
+		"phpoffice/phpspreadsheet": "^1.17",
+		"collei/lowcache": "^0.1.0",
+		"collei/conf": "^0.1.0"
 	},
 	"autoload": {
 		"psr-4": {
 			"Collei\\Exceller\\": "src/"
 		}
+	},
+	"require-dev": {
+		"phpunit/phpunit": "^9.6"
 	}
 }
