@@ -3,7 +3,7 @@ namespace Collei\Exceller\Input;
 
 use PhpOffice\PhpSpreadsheet\IOFactory as PhpSpreadsheetIOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use Collei\Exceller\Support\Str;
+use Collei\Exceller\Input\HeadingRow\Formatter;
 use Closure;
 use DateTime;
 use InvalidArgumentException;
@@ -155,7 +155,7 @@ abstract class Reader
 	 * @param int $startRow = 1
 	 * @param int $endRow = null
 	 * @param string $endColumn = null
-	 * @param array $customHeadings = null
+	 * @param bool|array $withHeading = false
 	 * @param bool $groupedHeadings = false
 	 * @return array
 	 * @throws \RuntimeException if $startRow is lesser then 1
@@ -166,7 +166,7 @@ abstract class Reader
 		int $startRow = 1,
 		int $endRow = null,
 		string $endColumn = null,
-		array $customHeadings = null,
+		$withHeading = null,
 		bool $groupedHeadings = false
 	) {
 		if ($startRow < 1) {
@@ -183,7 +183,12 @@ abstract class Reader
 		$emptyLinesLimit = 10;
 
 		// header guide
-		$headerLine = null;
+		$hasHeading = false !== $withHeading;
+		$hasNoHeading = false === $hasHeading;
+		$headerLine = $hasHeading ? null : range('A', $endColumn);
+
+		// custom headings (column names)
+		$customHeadings = is_array($withHeading) ? $withHeading : null;
 
 		foreach ($lines as $lineNumber) {
 			// define row range (the columns whose data must get captured)
@@ -213,7 +218,7 @@ abstract class Reader
 			$trimmedLine = [];
 
 			// if the title row got captured
-			if ($headerLine) {
+			if ($headerLine || $hasNoHeading) {
 				// capture data from existing title row columns only
 				if ($groupedHeadings) {
 					// allow for multiple columns with same name
@@ -238,7 +243,7 @@ abstract class Reader
 					// captures only the first column of each name
 					// when there are two or more with same name
 					foreach ($headerLine as $k => $v) {
-						$colName = $v['sanitized'];
+						$colName = $hasHeading ? $v['sanitized'] : $k;
 						//
 						// avoid content override (preserves the first non-empty)
 						if (empty($trimmedLine[$colName])) {
@@ -294,12 +299,19 @@ abstract class Reader
 	 *
 	 * @static
 	 * @param string $identifier
+	 * @param string $using = 'ascii'
 	 * @return string
 	 */
-	private static function sanitizeIdentifier(string $identifier)
-	{
+	private static function sanitizeIdentifier(
+		string $identifier, string $using = 'ascii'
+	) {
+		// permite usar customizado se solicitado
+		if ('ascii' !== $using) {
+			return Formatter::apply($identifier, 0, $using);
+		}
+
 		// remover acentos de letras, troca espaços para underscore
-		$identifier = Str::ascii($identifier);
+		$identifier = Formatter::apply($identifier, 0, 'ascii');
 		// tudo em minúsculas
 		$identifier = strtolower(trim($identifier));
 		// trocar espaços para underscores
