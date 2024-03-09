@@ -17,7 +17,7 @@ Read excel files with ease.
 *  ...??
 
 ### Testing
-1. Unpack the `test.zip` file and navigate to the `test` folder;
+1. Unpack the `test.zip` file and navigate to the `test/integrated` folder;
 2. Run `serve-windows.cmd` (for Windows) or `serve-linux.sh` (Linux distros);
 3. Go `http://localhost:8080` in your browser;
 4. Have fun!
