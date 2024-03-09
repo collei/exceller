@@ -17,10 +17,12 @@ Read excel files with ease.
 *  ...??
 
 ### Testing
-1. Unpack the `test.zip` file and navigate to the `test/integrated` folder;
-2. Run `serve-windows.cmd` (for Windows) or `serve-linux.sh` (Linux distros);
-3. Go `http://localhost:8080` in your browser;
-4. Have fun!
+First, unpack the `test.zip` at the project's base folder.
 
-Tests are organized in subfolders `/01/`, `/02/` and so on.
-You'll find the .xlsx files in the `/files/` folder.
+#### Unit Tests
+Run `test.cmd` (for Windows) or `test.sh` (Linux distros) and see the results.
+
+#### Integrated
+Run `serve-windows.cmd` (for Windows) or `serve-linux.sh` (Linux distros), then go `http://localhost:8080` in your browser.
+
+Such tests are organized under `test/integrated` in subfolders named `01`, `02` etc., with the .xlsx files in the `files` subfolder.
