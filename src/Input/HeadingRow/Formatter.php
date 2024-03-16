@@ -54,7 +54,7 @@ abstract class Formatter
 	{
 		self::registerBasicFormatters();
 
-		$which = $formatterName ?? self::$defaultFormatter ?? 'default';
+		$which = $formatterName ?? self::$defaultFormatter;
 
 		if ($formatter = self::$formatters[$which] ?? null) {
 			if ($formatter instanceof self) {
@@ -88,9 +88,7 @@ abstract class Formatter
 			self::extend('none', function($value, $key) {
 				return $value;
 			});
-		}
 
-		if (! array_key_exists('ascii', self::$formatters)) {
 			self::extend('ascii', new AsciiFormatter());
 		}
 	}

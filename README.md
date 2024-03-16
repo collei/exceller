@@ -1,8 +1,6 @@
-**collei/exceller**
+# collei/exceller
 
-Just a wrapper for the PHPOffice/PHPSpreadsheet package.
-	
-Read excel files with ease.
+Just a wrapper for the PHPOffice/PHPSpreadsheet package. Read excel files with ease.
 
 ## Requirements
 *  PHP 7.2 or newer
@@ -16,7 +14,7 @@ Read excel files with ease.
 *  Shorthand helpers for importing;
 
 ### To be added
-*  ...??
+*  Built-in integrated cache system (requires [collei/lowcache])
 
 ## Testing
 1. Unpack the `test.zip` at the project's base folder;
@@ -25,7 +23,9 @@ Read excel files with ease.
 ### Unit Tests
 * Run `test-unit.cmd` (for Windows) or `test-unit.sh` (Linux distros) and see the results.
 
+Find them all under `test/unit`, with the .xlsx and config files in the `files` subfolder.
+
 ### Integrated
 * Run `serve-integrated.cmd` (for Windows) or `serve-integrated.sh` (Linux distros), then go `http://localhost:8080` in your browser.
 
-Such tests are organized under `test/integrated` in subfolders named `01`, `02` etc., with the .xlsx files in the `files` subfolder.
+Find them all under `test/integrated` in subfolders named `01`, `02` etc., with the .xlsx files in the `files` subfolder.
