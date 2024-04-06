@@ -33,7 +33,7 @@ class ClosureReader extends Reader
 			} else {
 				$callback($row);
 			}
-		}, $startLine);
+		}, $startLine, null, null, $hasDataHeader, false);
 
 		return $lineCount;
 	}	
